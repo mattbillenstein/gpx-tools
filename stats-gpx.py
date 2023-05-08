@@ -49,9 +49,9 @@ def main(args):
         totaldist = 0.0
         totalelev = 0.0
 
-        last = None
-
         for trk in sorted(getlist(doc['gpx'], 'trk') + getlist(doc['gpx'], 'rte'), key=lambda x: x['name']):
+            last = None
+
             if 'trkseg' in trk:
                 pts = []
                 for trkseg in getlist(trk, 'trkseg'):
@@ -63,18 +63,20 @@ def main(args):
             up = 0.0
             down = 0.0
 
+            has_ele = all('ele' in _ for _ in pts)
+
             for pt in pts:
                 if last:
                     dist += haversine_trkpt(last, pt)
 
                     # missing elevations seem to be -19999.0
-                    if pt['ele'] != '-19999.0' and last['ele'] != '-19999.0':
+                    if has_ele and pt['ele'] != '-19999.0' and last['ele'] != '-19999.0':
                         elev = (float(pt['ele']) - float(last['ele'])) * METERS_TO_FEET
                         if elev > 0.0:
                             up += elev
                         else:
                             down += elev
-                else:
+                elif has_ele:
                     # set initial elevation
                     totalelev = float(pt['ele']) * METERS_TO_FEET
 
@@ -84,7 +86,6 @@ def main(args):
 
             totaldist += dist
             totalelev += elev
-            lastelev = float(last['ele']) * METERS_TO_FEET
 
             print('%-40s %10.1f %10.1f %10.1f %10.1f %10.1f %10.1f' % (trk['name'].replace(' ', '_'), dist, totaldist, up, down, elev, totalelev))
 
